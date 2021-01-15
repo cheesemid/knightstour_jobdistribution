@@ -14,6 +14,9 @@ import requests
 import hashlib
 import paramiko
 from io import StringIO
+import multiprocessing
+
+import logging
 
 # Imports for Job Processing
 import clientjobexec
@@ -178,6 +181,8 @@ def returncompletejob(jobobj):
     return retval
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
+
     # Print Botchgy Header
     header = [r" ____   ___ _____ ____ _   _  ______   __  ___ _   _  ____ ", r"| __ ) / _ \_   _/ ___| | | |/ ___\ \ / / |_ _| \ | |/ ___|", r"|  _ \| | | || || |   | |_| | |  _ \ V /   | ||  \| | |    ", r"| |_) | |_| || || |___|  _  | |_| | | |    | || |\  | |___ ", r"|____/ \___/ |_| \____|_| |_|\____| |_|   |___|_| \_|\____|"]
     for line in header:
@@ -191,6 +196,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, exitsig_obj.signal_handler)
 
     # SSH Tunnel Setup
+    sshtunnel.DEFAULT_LOGLEVEL = logging.DEBUG
     try:
         tun = sshtunnel.SSHTunnelForwarder(hostip, 
                                         ssh_username=user,
