@@ -17,7 +17,7 @@ for i in range(len(basepath.split("/"))-1):
     currentdir = currentdir + basepath.split("/")[i] + "/"
 
 class client():
-    def __init__(self, ident, lastkeepalive=0, currentjob=None):
+    def __init__(self, ident, lastkeepalive=0, currentjob=[]):
         self.ident = ident
         if lastkeepalive == 0:
             self.lastkeepalive = int(time.time())
@@ -114,7 +114,7 @@ def getnextjob(data):
         if c != None:
             dispatch = joblist.pop()
             dispatch.dispatchtime = int(time.time())
-            c.currentjob = dispatch
+            c.currentjob.append(dispatch)
             tosend = pickle.dumps(dispatch.outputtolist())
             logger(1,"Jobs Left: " + str(len(joblist)))
             return tosend
@@ -178,7 +178,15 @@ def returnjob(data):
                 outfclient.write(str(int(int(completedjob.data)/((int(time.time()) - int(completedjob.dispatchtime)+1)))) + "\n") #avgrpers
 
             c = getclient(ident)
-            c.currentjob = None
+            jobtoremove = None
+            for j in c.currentjob:
+                if j.jobid == completedjob.jobid:
+                    jobtoremove = j
+            if jobtoremove != None:
+                c.currentjob.remove(j)
+            else:
+                raise Exception("Job not found")
+
             logger(1,f"Job Completed by: {ident[0]}")
             logger(1,"Jobs Left: " + str(len(joblist)))
             return b"0"
@@ -263,9 +271,10 @@ def checkkeepalive():
             toremove.append(c)
     logger(0,f"Toremove = {toremove}")
     for c in toremove:
-        if c.currentjob != None:
-            joblist.append(c.currentjob)
-            logger(0,f"Recycling Job: ID={c.currentjob.jobid}")
+        if c.currentjob != []:
+            for j in c.currentjob:
+                joblist.append(j)
+                logger(0,f"Recycling Job: ID={j.jobid}")
         activeclients.remove(c)
 
 def admin(data):
@@ -300,8 +309,9 @@ def admin(data):
 def shutdown():
     # Saves all job data
     for c in activeclients:
-        if c.currentjob != None:
-            joblist.append(c.currentjob)
+        if c.currentjob != []:
+            for j in c.currentjob:
+                joblist.append(j)
     outf = open(currentdir + "pjoblist.bin", "wb")
     joblistlist = [j.outputtolist() for j in joblist]
     pjoblistlist = pickle.dumps(joblistlist)

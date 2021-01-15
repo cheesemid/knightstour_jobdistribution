@@ -1,8 +1,3 @@
 ===TODO===
 
 1. make client multiprocessing
-2. make currentjob in client class of backend.py be a list and change assignment functionality to match
-    - getnextjob
-    - returnjob
-    - shutdown
-    - checkkeepalive
