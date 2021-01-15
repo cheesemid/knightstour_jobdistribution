@@ -29,6 +29,7 @@ class jobexecclass:
         starttime = time.time()
         try:
             self.ktour(self.startpointlist[1], self.startpointlist[0], 0, visited)
+            print("Process Finished")
         except KeyboardInterrupt:
             print("---KeyboardInterrupt---")
             pass
@@ -69,6 +70,7 @@ def shuffle():
         inputlist.append(originallist[i])
 
 if __name__ == "__main__":
+    mp.freeze_support()
 
     # P Vars
     originallist = [[-2,1],[-1,2],[1,2],[2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]]
