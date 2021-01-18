@@ -109,21 +109,21 @@ def getnextjob(data):
     except:
         logger(2,"Failed getnext job: Data was None")
         return b"1"
-    try:
-        c = getclient(ident)
-        if c != None:
+    c = getclient(ident)
+    if c != None:
+        try:
             dispatch = joblist.pop()
-            dispatch.dispatchtime = int(time.time())
-            c.currentjob.append(dispatch)
-            tosend = pickle.dumps(dispatch.outputtolist())
-            logger(1,"Jobs Left: " + str(len(joblist)))
-            return tosend
-        else:
-            logger(2,"Failed getnext job: Client had active job")
-            return b"1"
-    except IndexError:
+        except IndexError:
+            logger(2, "JOBLIST IS EMPTY")
+        dispatch.dispatchtime = int(time.time())
+        c.currentjob.append(dispatch)
+        tosend = pickle.dumps(dispatch.outputtolist())
+        logger(1,"Jobs Left: " + str(len(joblist)))
+        return tosend
+    else:
         logger(2,"Failed getnext job: Client not found")
-        return b"1"
+    return b"1"
+    
 
 def returnjob(data):
     # From /return
@@ -183,11 +183,11 @@ def returnjob(data):
                 if j.jobid == completedjob.jobid:
                     jobtoremove = j
             if jobtoremove != None:
+                logger(1,f"Job {jobtoremove.jobid} Completed by: {ident[0]}")
                 c.currentjob.remove(j)
             else:
                 raise Exception("Job not found")
 
-            logger(1,f"Job Completed by: {ident[0]}")
             logger(1,"Jobs Left: " + str(len(joblist)))
             return b"0"
         else:

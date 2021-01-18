@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+jobid = -1
 rcounter = 0
 movelist = []
 
@@ -12,15 +13,17 @@ def makearr(x, y):
             arr.append(currlist)
         return arr
 
-def executejob(startpointlist, inputmovelist):
+def executejob(injobid, startpointlist, inputmovelist, q):
+    global jobid
     global rcounter
     global movelist
+    jobid = injobid
     movelist = inputmovelist
     rcounter = 0
     visited = makearr(8,8)
     if ktour(startpointlist[1], startpointlist[0], 0, visited):
-        return rcounter
-    return -1
+        q.put([jobid,rcounter]) #/ return list [jobid,rcounter]
+    q.put([jobid,-1])
 
 
 def ktour(startx, starty, iteration, visited):
@@ -29,8 +32,8 @@ def ktour(startx, starty, iteration, visited):
         rcounter += 1
 
         visited[starty][startx] = iteration
-        if rcounter > 600000: #/
-            return True
+        if rcounter > 9000000: # Recursion Cap :: approx. 35s with 11 threads on i7-8750H
+            return False
 
         if iteration == 64:
             return True

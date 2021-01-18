@@ -24,6 +24,9 @@ import clientjobexec
 # Debug Bool
 dodebug = True
 
+#Multiprocessing Consts
+mp_max = multiprocessing.cpu_count()-1
+
 # SSH TUNNEL CONNECTION VARS
 hostip = "jcwcopg.ddns.net"
 user = "tunnel"
@@ -38,9 +41,10 @@ for i in range(len(basepath.split("/"))-1):
     currentdir = currentdir + basepath.split("/")[i] + "/"
 
 # Job Vars
-current_job = None
+inprogress_jobs = []
+completed_jobs = []
 jobs_completed = 0
-current_job_completed = False
+mp_availible_threads = multiprocessing.cpu_count()-1
 
 # Identification Vars
 # pgrmdir = __file__ + "/../"
@@ -170,7 +174,7 @@ def getnextjob():
         return None
 
 def returncompletejob(jobobj):
-    logger(0, f"Returning Job: ID={current_job.jobid}")
+    logger(0, f"Returning Job: ID={jobobj.jobid}")
     r = http.client.HTTPConnection('127.0.0.1', local_port)
     jlist = jobobj.outputtolist()
     body = pickle.dumps([getident(),jlist])
@@ -180,8 +184,12 @@ def returncompletejob(jobobj):
     retval = int(retval)
     return retval
 
+def get_inprogress_job_by_id(jobid):
+    pass #/
+
 if __name__ == "__main__":
     multiprocessing.freeze_support()
+    # Fix for Pyinstaller EXE
 
     # Print Botchgy Header
     header = [r" ____   ___ _____ ____ _   _  ______   __  ___ _   _  ____ ", r"| __ ) / _ \_   _/ ___| | | |/ ___\ \ / / |_ _| \ | |/ ___|", r"|  _ \| | | || || |   | |_| | |  _ \ V /   | ||  \| | |    ", r"| |_) | |_| || || |___|  _  | |_| | | |    | || |\  | |___ ", r"|____/ \___/ |_| \____|_| |_|\____| |_|   |___|_| \_|\____|"]
@@ -196,7 +204,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, exitsig_obj.signal_handler)
 
     # SSH Tunnel Setup
-    sshtunnel.DEFAULT_LOGLEVEL = logging.DEBUG
+    sshtunnel.DEFAULT_LOGLEVEL = logging.DEBUG #/
     try:
         tun = sshtunnel.SSHTunnelForwarder(hostip, 
                                         ssh_username=user,
@@ -223,41 +231,71 @@ if __name__ == "__main__":
     keepalive_obj.start_running()
     exitsig_obj.addcleanupfxn(keepalive_obj.exit)
 
+    # Make Multiprocessing Queue
+    q = multiprocessing.Queue()
+
     # Exec Loop
     try:
         while True:
-            if current_job_completed == False:
-                if current_job == None:
-                    current_job = getnextjob()
-                    if current_job != None:
-                        logger(1, f"New Job Recieved: ID={current_job.jobid}")
-                if current_job != None:
-                    logger(1, f"Starting Job: ID={current_job.jobid}")
+            # Check queue for responses
+            try:
+                jobexecreturn = q.get(block=False)
+            except:
+                #queue empty
+                jobexecreturn = None
+
+            
+            if jobexecreturn != None:
+                jobtoreturn = None
+                #find job
+                for j in inprogress_jobs:
+                    if j.jobid == jobexecreturn[0]:
+                        jobtoreturn = j
+
+                #remove job from inprogress
+                if jobtoreturn != None:
+                    print("job to return is not none")
+                    inprogress_jobs.remove(jobtoreturn) #/ not in list for some reason
+                    #set data in job and set completedflag
+                    logger(1, f"Completed Job: ID={jobtoreturn.jobid}")
+                    jobtoreturn.data = jobexecreturn[1]
+                    jobtoreturn.completedflag = True
+                    completed_jobs.append(jobtoreturn)
+                else:
+                    print("job to return is none")
+
+            if mp_availible_threads > 0 and completed_jobs == []:
+                # Get and start new job
+                next_job = getnextjob()
+                if next_job != None:
+                    logger(1, f"New Job Recieved: ID={next_job.jobid}")
+                    logger(1, f"Starting Job: ID={next_job.jobid}")
                     #execute job
-                    recursioncount = clientjobexec.executejob(current_job.data[0],current_job.data[1])
-                    if recursioncount == -1:
-                        #Failed
-                        raise Exception("JOB RETURNED -1 WTF")
-                    else:
-                        logger(1, f"Completed Job: ID={current_job.jobid}")
-                        current_job.data = recursioncount
-                        current_job.completedflag = True
-                        current_job_completed = True
-            elif current_job_completed == True:
+                    mp_availible_threads -= 1
+                    inprogress_jobs.append(next_job)
+                    proc = multiprocessing.Process(target=clientjobexec.executejob, args=(next_job.jobid,next_job.data[0],next_job.data[1],q))
+                    proc.start()
+                    logger(1, f"Jobs Running: {mp_max - mp_availible_threads}")
+
+            if completed_jobs != []:
                 #return job output
-                retval = returncompletejob(current_job)
-                if retval == 1:
-                    raise Exception("Return Completed Job returned 1")
-                jobs_completed += 1
-                #reset completed bool
-                current_job_completed = False
-                #output to logger
-                logger(1, f"Returned Job: ID={current_job.jobid}")
-                logger(1, f"Jobs Completed: {jobs_completed}")
-                #set current job to None
-                current_job = None
+                jobstoremove = []
+                for j in completed_jobs:
+                    retval = returncompletejob(j)
+                    if retval == 1:
+                        raise Exception("Return Completed Job returned 1")
+                    jobs_completed += 1
+                    mp_availible_threads += 1
+                    #output to logger
+                    logger(1, f"Returned Job: ID={j.jobid}")
+                    logger(1, f"Jobs Completed: {jobs_completed}")
+                    #Add job to remove list
+                    jobstoremove.append(j)
+
+                for j in jobstoremove:
+                    completed_jobs.remove(j)
     except KeyboardInterrupt:
-        exitsig_obj.addcleanupfxn(keepalive_obj.exit)
+        pass
     
 
     exitsig_obj.signal_handler(0,0)
