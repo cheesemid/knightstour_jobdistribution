@@ -282,7 +282,7 @@ def admin(data):
     """
     Server side code for /admin page
     Admin requests /admin with list containing pickled admin ident and optional command
-    Returns output dict without command or b"0" with command if successful and b"1" if failed    
+    Returns output dict without command or command output with command if successful and default page if failed    
     """
     correctadminident = "5a4544"
     try:
