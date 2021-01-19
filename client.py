@@ -297,17 +297,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
     
-
     exitsig_obj.signal_handler(0,0)
-
-
-# "C:\Users\jcwco\zhome\doc\keys\qkey\qkey.pem"
-
-
-"""
-todo:
-    add job exec import and callability (make fxn call variable)
-    replace ssh passwd with key
-    add job callback process and handling in loop and stuff
-
-"""
