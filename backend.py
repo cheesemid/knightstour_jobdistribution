@@ -152,18 +152,11 @@ def returnjob(data):
             clientls = os.listdir(currentdir + "clientinfo")
             if str(str(ident[0]) + ".txt") in clientls:
                 infclient = open(currentdir + "clientinfo/" + str(ident[0]) + ".txt", "r")
-                numjobsdone = infclient.readline()
-                totalrecursions = infclient.readline()
-                totalseconds = infclient.readline()
-                avgrpers = infclient.readline()
-                numjobsdone.strip("\n")
-                avgrpers.strip("\n")
-                totalrecursions.strip("\n")
-                totalseconds.strip("\n")
-                numjobsdone = int(numjobsdone)
-                avgrpers = int(avgrpers)
-                totalrecursions = int(totalrecursions)
-                totalseconds = int(totalseconds)
+                numjobsdone,totalrecursions,totalseconds,avgrpers = None,None,None,None
+                for i in (numjobsdone,totalrecursions,totalseconds,avgrpers):
+                    i = infclient.readline()
+                    i.strip("\n")
+                    i = int(i)
                 infclient.close()
                 outfclient = open(currentdir + "clientinfo/" + str(ident[0]) + ".txt", "w")
                 outfclient.write(str(numjobsdone + 1) + "\n") #numjobsdone
