@@ -1,3 +1,4 @@
 ===TODO===
 
-1. make client multiprocessing
+1. fix server job handling
+2. replace client execution with .so to increase speed 10x (implement with python ctypes)
