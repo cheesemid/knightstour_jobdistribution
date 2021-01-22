@@ -21,7 +21,7 @@ def executejob(injobid, startpointlist, inputmovelist, q):
     movelist = inputmovelist
     rcounter = 0
     visited = makearr(8,8)
-    if ktour(startpointlist[1], startpointlist[0], 1, visited):
+    if ktour(startpointlist[0], startpointlist[1], 1, visited):
         q.put([jobid,rcounter]) #/ return list [jobid,rcounter]
     q.put([jobid,-1])
 
