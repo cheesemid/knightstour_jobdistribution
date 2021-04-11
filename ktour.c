@@ -35,17 +35,12 @@ int knight(int startx, int starty, int iteration, int *visited, int *allmovesrel
 	return 1;
 }
 int main(int argc, char *argv[]){
-	int x = 0;
-	int y = 0;
-	int i = 0;
+	int x = 0, y = 0, i = 0;
 	if (argc == 3){
 		x = atoi(argv[2]);
 		y = atoi(argv[1]);
 	}
-	int* visited = (int *)malloc(8 * 8 * sizeof(int));
-	for (i = 0; i < 64; i++) {
-		*(visited + i) = 0; // thanks to malloc not initializing memory
-	}
+	int* visited = (int*)calloc(64, 4);
 	int allmovesrelative[16] = { -1,2,1,2,2,1,1,-2,2,-1,-2,-1,-2,1,-1,-2 };
 	knight(x,y,1,visited,allmovesrelative);
 	printf("%d\n", rcounter);
