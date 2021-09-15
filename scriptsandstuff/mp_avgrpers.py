@@ -89,8 +89,8 @@ if __name__ == "__main__":
     processcount = mp.cpu_count()-1 if mp.cpu_count() != 1 else 1
     q = mp.Queue()
 
-    if mp.get_start_method() != "spawn":
-        mp.set_start_method('spawn')
+    #if mp.get_start_method() != "spawn":
+    #    mp.set_start_method('spawn')
     print(mp.get_start_method())
     print(processcount)
     for i in range(processcount):
